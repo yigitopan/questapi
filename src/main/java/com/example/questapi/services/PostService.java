@@ -1,31 +1,56 @@
 package com.example.questapi.services;
 
+import com.example.questapi.entities.Comment;
+import com.example.questapi.entities.Like;
 import com.example.questapi.entities.Post;
 import com.example.questapi.entities.User;
 import com.example.questapi.repos.PostRepository;
 import com.example.questapi.requests.PostCreateRequest;
 import com.example.questapi.requests.PostUpdateRequest;
+import com.example.questapi.responses.CommentResponse;
+import com.example.questapi.responses.LikeResponse;
+import com.example.questapi.responses.PostResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
+    @Autowired
+    @Lazy
+    LikeService likeService;
+
+    @Autowired
+    @Lazy
+    CommentService commentService;
+
     PostRepository postRepository;
     UserService userService;
-    public PostService(PostRepository postRepository, UserService userService) {
+    public PostService(
+            PostRepository postRepository,
+            UserService userService
+    ) {
         this.postRepository = postRepository;
         this.userService = userService;
     }
 
-    public List<Post> getAllPosts(Optional<Long> userId) {
+    public List<PostResponse> getAllPosts(Optional<Long> userId) {
+        List<Post> posts;
         if (userId.isPresent()) {
-            return postRepository.findByUserId(userId.get());
+            posts = postRepository.findByUserId(userId.get());
         } else {
-            return postRepository.findAll();
+            posts = postRepository.findAll();
         }
+        return posts.stream().map(post -> {
+            List<LikeResponse> LikeList = likeService.getLikesOfPost(post.getId());
+            List<Comment> Comments = commentService.getAllComments(Optional.of(post.getId()), Optional.empty());
+            List<CommentResponse> CommentList = Comments.stream().map(CommentResponse::new).collect(Collectors.toList());
+            return new PostResponse(post, LikeList, CommentList);
+        }).collect(Collectors.toList());
     }
 
     public Post getOnePost(Long postId) {
@@ -39,7 +64,6 @@ public class PostService {
         }
 
         Post toSave = new Post();
-        toSave.setId(newPost.getId());
         toSave.setTitle(newPost.getTitle());
         toSave.setText(newPost.getText());
         toSave.setUser(user);

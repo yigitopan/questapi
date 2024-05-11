@@ -1,10 +1,9 @@
 package com.example.questapi.requests;
 
+
 import lombok.Data;
 
 @Data
-public class PostCreateRequest {
+public class CommentUpdateRequest {
     String text;
-    String title;
-    Long userId;
 }
