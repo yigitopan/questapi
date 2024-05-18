@@ -63,4 +63,13 @@ public class JwtTokenProvider {
     }
 
 
+    public String generateJwtTokenByUserId(Long id) {
+        Date expiryDate = new Date(new Date().getTime() + EXPIRES_IN);
+        return Jwts.builder()
+                .setSubject(Long.toString(id))
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS512, APP_SECRET)
+                .compact();
+    }
 }
